@@ -1,7 +1,5 @@
-
 from fastapi import FastAPI
 from app.database import SessionLocal, init_database
-from app.app_config import AppConfig
 from typing import AsyncIterator
 
 from app.kafka import start_kafka_consumer, stop_kafka_consumer
@@ -11,13 +9,15 @@ from app.routes import router
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Startup tasks
     print("Starting up")
-    start_kafka_consumer()
+    app.state.consumer, app.state.consumer_thread = start_kafka_consumer()
 
-    yield  
+    try:
+        yield
+    finally:
+        print("Shutting down")
+        stop_kafka_consumer(app.state.consumer, app.state.consumer_thread)
 
-    print("Shutting down")
-    stop_kafka_consumer()
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 init_database()
 
