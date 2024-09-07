@@ -1,11 +1,10 @@
 from fastapi import FastAPI
-from sqlalchemy.testing.plugin.plugin_base import logging
-from app.database.database import SessionLocal,  Base, engine
-from app.config.app_config import AppConfig
+from app.database import SessionLocal, init_database
+from app.app_config import AppConfig
 from kafka import KafkaProducer
 import json
 from typing import AsyncIterator
-from app.database.seed import seed_customers
+from app.routes import router
 
 
 # Kafka Producer Dependency
@@ -32,9 +31,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 # Initialize FastAPI with lifespan
 app = FastAPI(lifespan=lifespan)
 
-Base.metadata.create_all(bind=engine)
-seed_customers()
+init_database()
 
-
-from app.routes import order 
-app.include_router(order.router, prefix="/api")
+app.include_router(router, prefix="/api")

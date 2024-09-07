@@ -1,4 +1,4 @@
-from ..models import Order, OrderItem, Customer
+from app.models import Order, OrderItem, Customer
 
 def validate_order_data(data):
     if 'customer_id' not in data:

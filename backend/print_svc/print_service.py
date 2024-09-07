@@ -35,14 +35,37 @@ def setup_kafka_producer():
         logger.error(f"Failed to set up Kafka producer: {str(e)}")
         raise
 
-def print_sample_part(order_item):
-    logger.info(f"Starting to print {order_item['quantity']} of sample part {order_item['sample_part_id']} with material {order_item['material_id']}")
+def print_sample_parts(batch):
+    """
+    Simulates printing a batch of sample parts.
+    """
+    logger.info(f"Starting to print batch: {batch}")
     try:
-        # Simulate the printing process
-        time.sleep(2)
-        logger.info(f"Finished printing {order_item['quantity']} of sample part {order_item['sample_part_id']}")
+        # Simulate printing each item in the batch
+        for item in batch['items']:
+            logger.info(f"Printing {item['quantity']} of sample part {item['sample_part_id']} with material {item['material_id']}")
+            time.sleep(2)  # Simulate printing time
+            logger.info(f"Finished printing {item['quantity']} of sample part {item['sample_part_id']}")
     except Exception as e:
-        logger.error(f"Error while printing: {str(e)}")
+        logger.error(f"Error while printing batch: {str(e)}")
+
+def process_order(order):
+    """
+    Processes an order by grouping items into batches and printing them.
+    """
+    logger.info(f"Processing order: {order}")
+
+    # Group items by sample part and material
+    batches = {}
+    for item in order.get('items', []):
+        key = (item['sample_part_id'], item['material_id'])
+        if key not in batches:
+            batches[key] = {'sample_part_id': item['sample_part_id'], 'material_id': item['material_id'], 'items': []}
+        batches[key]['items'].append(item)
+
+    # Print each batch
+    for batch in batches.values():
+        print_sample_parts(batch)
 
 def main():
     consumer = setup_kafka_consumer()
@@ -52,12 +75,13 @@ def main():
         order = message.value
         logger.info(f"Received order: {order}")
 
-        for item in order.get('items', []):
-            print_sample_part(item)
-        
-        # After printing, produce a message to another topic if needed
-        producer.send('printed_parts', value={'order_id': order['id'], 'status': 'printed'})
-        producer.flush()
+        try:
+            process_order(order)
+            # After printing, produce a message to another topic if needed
+            producer.send('printed_parts', value={'order_id': order['id'], 'status': 'printed'})
+            producer.flush()
+        except Exception as e:
+            logger.error(f"Error processing order: {str(e)}")
 
 if __name__ == "__main__":
     main()

@@ -42,7 +42,7 @@ services:
       - kafka
 
   print_service:
-    build: ./print_service
+    build: print_svc
     ports:
       - "5001:5001"
     environment:
