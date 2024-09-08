@@ -1,0 +1,4 @@
+# Test the print-batch endpoint when there are no pending orders
+GET http://127.0.0.1:8000/print-batch
+Accept: application/json
+
