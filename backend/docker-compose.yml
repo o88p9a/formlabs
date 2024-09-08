@@ -19,47 +19,29 @@ services:
     depends_on:
       - zookeeper
 
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: order_db
-    volumes:
-      - order_db_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-  
   order_service:
-    build: ./order_service
+    build: ./order-service
     ports:
-      - "5000:5000"
+      - "7998:7998"
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/order_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
-      - db
       - kafka
 
   print_service:
-    build: print_svc
+    build: ./print-service
     ports:
-      - "5001:5001"
+      - "8000:8000"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      PRINT_TOPIC: orders
     depends_on:
       - kafka
 
   shipping_service:
-    build: shipping_svc
+    build: ./shipping-service
     ports:
-      - "5002:5002"
+      - "7999:7999"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SHIPPING_TOPIC: printed_parts
     depends_on:
       - kafka
-
-volumes:
-  order_db_data:

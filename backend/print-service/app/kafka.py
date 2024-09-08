@@ -15,7 +15,7 @@ def kafka_consumer_loop(consumer):
 
 def start_kafka_consumer():
     consumer = KafkaConsumer(
-        "order",
+        AppConfig.ORDER_TOPIC,
         bootstrap_servers=AppConfig.KAFKA_BOOTSTRAP_SERVERS,
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )

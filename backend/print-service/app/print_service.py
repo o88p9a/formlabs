@@ -2,6 +2,8 @@ import threading
 import time
 from queue import Queue
 from sqlalchemy import func
+
+from app.app_config import AppConfig
 from app.database import SessionLocal
 from app.models import PrintOrder, PrintOrderItem
 
@@ -75,7 +77,7 @@ def notify_order_completion_if_ready(db, order_id):
             print(f"Order {order.id} has been marked as completed.")
 
             kafka_producer = get_kafka_producer()
-            kafka_producer.send("order_printed", {
+            kafka_producer.send(AppConfig.ORDER_PRINTED_TOPIC, {
                 "order_id": order.id,
                 "customer_id": order.customer_id,
                 "customer_name": order.customer_name,

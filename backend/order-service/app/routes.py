@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+from app.app_config import AppConfig
 from app.order_service import validate_order, process_order, validate_order_data
 from app.database import get_db
 
@@ -23,9 +25,8 @@ async def place_order(data: dict, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    # Send order to Kafka
     kafka_producer = app.state.kafka_producer
-    kafka_producer.send('order', order.serialize())
+    kafka_producer.send(AppConfig.ORDER_TOPIC, order.serialize())
 
     return {"message": "Order placed successfully!"}
 
