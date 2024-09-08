@@ -7,19 +7,19 @@ def handle_order_printed_event(event):
     db = SessionLocal()
 
     try:
-        order = db.query(Order).filter(Order.id == event_data["order_id"]).first()
+        order = db.query(Order).filter(Order.id == event["order_id"]).first()
         if order:
-            print(f"Order {event_data['order_id']} already processed.")
+            print(f"Order {event['order_id']} already processed.")
             return
 
         order = Order(
-            id=event_data["order_id"],
-            customer_id=event_data["customer_id"],
-            customer_name=event_data["customer_name"]
+            id=event["order_id"],
+            customer_id=event["customer_id"],
+            customer_name=event["customer_name"]
         )
         db.add(order)
 
-        for item in event_data["items"]:
+        for item in event["items"]:
             order_item = OrderItem(
                 order_id=order.id,
                 sample_part_id=item["sample_part_id"],
