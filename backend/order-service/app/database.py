@@ -24,14 +24,21 @@ def seed_customers():
     db = SessionLocal()
     try:
         customers = [
-            Customer(id=1, name="Customer 1"),
-            Customer(id=2, name="Customer 2"),
-            Customer(id=3, name="Customer 3")
+            {"id": 1, "name": "Customer 1"},
+            {"id": 2, "name": "Customer 2"},
+            {"id": 3, "name": "Customer 3"}
         ]
 
-        db.add_all(customers)
-        db.commit()
+        for customer_data in customers:
+            existing_customer = db.query(Customer).filter_by(id=customer_data["id"]).first()
 
+            if not existing_customer:
+                new_customer = Customer(id=customer_data["id"], name=customer_data["name"])
+                db.add(new_customer)
+            else:
+                print(f"Customer with id {customer_data['id']} already exists.")
+
+        db.commit()
         print("Customers added successfully.")
     except Exception as e:
         print(f"An error occurred: {e}")

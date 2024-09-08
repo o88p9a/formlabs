@@ -7,7 +7,7 @@ services:
       - "2181:2181"
 
   kafka:
-    image: wurstmeister/kafka:2.8.0
+    image: wurstmeister/kafka:2.13-2.6.3
     ports:
       - "9092:9092"
     environment:
@@ -24,7 +24,7 @@ services:
     ports:
       - "7998:7998"
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: "host.docker.internal:9092"
     depends_on:
       - kafka
 
@@ -33,7 +33,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: "host.docker.internal:9092"
     depends_on:
       - kafka
 
@@ -42,6 +42,6 @@ services:
     ports:
       - "7999:7999"
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: "host.docker.internal:9092"
     depends_on:
       - kafka
