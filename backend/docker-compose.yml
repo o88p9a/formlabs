@@ -52,7 +52,7 @@ services:
       - kafka
 
   shipping_service:
-    build: ./shipping_service
+    build: shipping_svc
     ports:
       - "5002:5002"
     environment:

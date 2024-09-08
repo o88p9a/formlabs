@@ -1,15 +1,12 @@
 from fastapi import FastAPI
-from app.database import SessionLocal, init_database
+from app.database import init_database
 from typing import AsyncIterator
 
 from app.kafka import start_kafka_consumer, stop_kafka_consumer
-from app.print_service import start_batch_processor
-from app.routes import router
 
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     print("Starting up")
     app.state.consumer, app.state.consumer_thread = start_kafka_consumer()
-    start_batch_processor()
     try:
         yield
     finally:
@@ -19,5 +16,3 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 init_database()
-
-app.include_router(router, prefix="/api")

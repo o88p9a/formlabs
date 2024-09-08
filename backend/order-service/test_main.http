@@ -18,5 +18,3 @@ Content-Type: application/json
   ],
   "address": "123 Test Street"
 }
-### Test get_orders (GET /orders)
-GET http://localhost:8000/api/orders
