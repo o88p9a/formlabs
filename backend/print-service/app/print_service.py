@@ -5,7 +5,8 @@ from sqlalchemy import func
 
 from app.app_config import AppConfig
 from app.database import SessionLocal
-from app.models import PrintOrder, PrintOrderItem
+from app.models import PrintOrder, PrintOrderItem, Status
+
 
 def process_order(order_data):
     db = SessionLocal()
@@ -14,7 +15,7 @@ def process_order(order_data):
             id=order_data['id'],
             customer_id=order_data['customer_id'],
             customer_name=order_data['customer_name'],
-            status='pending'
+            status=Status.PENDING
         )
         for item in order_data['items']:
             print_order_item = PrintOrderItem(
@@ -33,6 +34,7 @@ def process_order(order_data):
     finally:
         db.close()
 
+
 def simulate_batch_printing(batch, db):
     sample_part_id = batch.sample_part_id
     material_id = batch.material_id
@@ -43,11 +45,11 @@ def simulate_batch_printing(batch, db):
     items_in_batch = db.query(PrintOrderItem).filter(
         PrintOrderItem.sample_part_id == sample_part_id,
         PrintOrderItem.material_id == material_id,
-        PrintOrderItem.status == 'pending'
+        PrintOrderItem.status == Status.PENDING
     ).all()
 
     for item in items_in_batch:
-        item.status = 'printing'
+        item.status = Status.PRINTING
         db.commit()
         print(f"Item {item.id} status updated to 'printing' for Sample Part {sample_part_id}, Material {material_id}")
 
@@ -57,31 +59,32 @@ def simulate_batch_printing(batch, db):
             print(f"Printing unit {i} of {item.quantity} for Sample Part {sample_part_id}...")
             time.sleep(5)
 
-        item.status = 'printed'
+        item.status = Status.PRINTED
         db.commit()
         notify_order_completion_if_ready(db, item.order_id)
         print(f"Item {item.id} for Sample Part {sample_part_id}, Material {material_id} marked as 'printed'.")
-   
+
     print(f"Batch for Sample Part {sample_part_id}, Material {material_id} completed.")
+
 
 def notify_order_completion_if_ready(db, order_id):
     from app.kafka import get_kafka_producer
     order = db.query(PrintOrder).filter(PrintOrder.id == order_id).one_or_none()
 
     if order:
-        all_items_printed = all(item.status == 'printed' for item in order.items)
+        all_items_printed = all(item.status == Status.PRINTED for item in order.items)
 
         if all_items_printed:
-            order.status = 'completed'
+            order.status = Status.PRINTED
             db.commit()
-            print(f"Order {order.id} has been marked as completed.")
+            print(f"Order {order.id} has been marked as printed.")
 
             kafka_producer = get_kafka_producer()
             kafka_producer.send(AppConfig.ORDER_PRINTED_TOPIC, {
                 "order_id": order.id,
                 "customer_id": order.customer_id,
                 "customer_name": order.customer_name,
-                "status": "printed",
+                "status": Status.PRINTED,
                 "items": [
                     {
                         "sample_part_id": item.sample_part_id,
@@ -92,17 +95,18 @@ def notify_order_completion_if_ready(db, order_id):
             })
     print(f"Sent printing complete event for order {order.id}")
 
+
 def process_batches():
     db = SessionLocal()
     try:
-    
+
         batches = db.query(
             PrintOrderItem.sample_part_id,
             PrintOrderItem.material_id,
             func.sum(PrintOrderItem.quantity).label('total_quantity')
         ).join(PrintOrderItem.order).filter(
-            PrintOrder.status == 'pending',
-            PrintOrderItem.status == 'pending'
+            PrintOrder.status == Status.PENDING,
+            PrintOrderItem.status == Status.PENDING
         ).group_by(
             PrintOrderItem.sample_part_id,
             PrintOrderItem.material_id
@@ -112,7 +116,7 @@ def process_batches():
 
         stop_event = threading.Event()
 
-        num_worker_threads = 5  
+        num_worker_threads = 5
         threads = []
         for _ in range(num_worker_threads):
             thread = threading.Thread(target=worker, args=(queue, stop_event))
@@ -137,6 +141,7 @@ def process_batches():
     finally:
         db.close()
 
+
 def worker(queue, stop_event):
     while not stop_event.is_set() or not queue.empty():
         batch = queue.get()
@@ -153,9 +158,15 @@ def worker(queue, stop_event):
             db.close()
             queue.task_done()
 
+
 def start_batch_processor():
-    while True:
-        print("Starting batch processing...")
-        process_batches()
-        # wait before checking for new batches 
-        time.sleep(5)
+    def batch_processor():
+        while True:
+            print("Starting batch processing...")
+            process_batches()
+            # wait before checking for new batches 
+            time.sleep(5)
+
+    # Start the batch processor in a new daemon thread
+    processor_thread = threading.Thread(target=batch_processor, daemon=True)
+    processor_thread.start()

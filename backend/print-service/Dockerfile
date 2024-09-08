@@ -1,21 +1,21 @@
-FROM python:3.10-slim
+FROM python:3.9
 
 # Set environment variables
 ENV KAFKA_BOOTSTRAP_SERVERS="host.docker.internal:9092"
 
 # Set the working directory in the container
-WORKDIR /src
+WORKDIR /code
 
 # Copy the requirements file into the container
-COPY requirements.txt /src/
+COPY ./requirements.txt /code/requirements.txt
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # Copy the rest of the application code into the container
-COPY . /src/
+COPY ./app /code/app
 
-# Expose port 8000 for the FastAPI application
+# Expose port 7998 for the FastAPI application
 EXPOSE 8000
 
 # Run the FastAPI application, specifying that the main file is inside the "app" folder
