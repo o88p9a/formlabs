@@ -23,5 +23,5 @@ class PrintOrderItem(Base):
     sample_part_id = Column(Integer)
     material_id = Column(Integer)
     quantity = Column(Integer)
-
+    status = Column(String, default="pending")  # pending, printing, completed
     order = relationship("PrintOrder", back_populates="items")
