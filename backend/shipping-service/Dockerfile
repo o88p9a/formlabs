@@ -1,19 +1,22 @@
-# Use an official Python runtime as a parent image
 FROM python:3.10-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV KAFKA_BOOTSTRAP_SERVERS="host.docker.internal:9092"
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /src
 
-# Copy the requirements.txt first, for better caching
-COPY requirements.txt /app/
+# Copy the requirements file into the container
+COPY requirements.txt /src/
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app/
+# Copy the rest of the application code into the container
+COPY . /src/
 
-CMD ["python", "main.py"]
+# Expose port 7999 for the FastAPI application
+EXPOSE 7999
+
+# Run the FastAPI application, specifying that the main file is inside the "app" folder
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7999"]
