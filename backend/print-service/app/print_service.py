@@ -3,7 +3,6 @@ import time
 from queue import Queue
 from sqlalchemy import func
 from app.database import SessionLocal
-from app.kafka import get_kafka_producer
 from app.models import PrintOrder, PrintOrderItem
 
 def process_order(order_data):
@@ -58,12 +57,13 @@ def simulate_batch_printing(batch, db):
 
         item.status = 'printed'
         db.commit()
-        notify_order_completion_if_ready(db, item.quantity)
+        notify_order_completion_if_ready(db, item.order_id)
         print(f"Item {item.id} for Sample Part {sample_part_id}, Material {material_id} marked as 'printed'.")
-
+   
     print(f"Batch for Sample Part {sample_part_id}, Material {material_id} completed.")
 
 def notify_order_completion_if_ready(db, order_id):
+    from app.kafka import get_kafka_producer
     order = db.query(PrintOrder).filter(PrintOrder.id == order_id).one_or_none()
 
     if order:
