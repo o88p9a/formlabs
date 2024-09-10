@@ -1,6 +1,6 @@
 FROM python:3.9
 
-ENV KAFKA_BOOTSTRAP_SERVERS="host.docker.internal:9092"
+ENV KAFKA_BOOTSTRAP_SERVERS="kafka:9092"
 
 WORKDIR /code
 
